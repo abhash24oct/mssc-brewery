@@ -1,11 +1,17 @@
 package abhash.springframework.msscbrewery.web.controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import javax.validation.Valid;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +42,7 @@ public class BeerController {
 	}
 	
 	@PostMapping
-	public ResponseEntity<BeerDto> handlePost(@RequestBody BeerDto beerDto){
+	public ResponseEntity<BeerDto> handlePost(@Valid @RequestBody BeerDto beerDto){
 		BeerDto saveDto = beerService.saveNewBeer(beerDto);
 		
 		HttpHeaders header = new HttpHeaders();
@@ -46,7 +52,7 @@ public class BeerController {
 	
 	
 	@PutMapping("/{beerId}")
-	public ResponseEntity<BeerDto> handleUpdate(@PathVariable UUID beerId, @RequestBody BeerDto beerDto){
+	public ResponseEntity<BeerDto> handleUpdate(@PathVariable UUID beerId, @Valid @RequestBody BeerDto beerDto){
 		
 		@SuppressWarnings("unused")
 		BeerDto updatebeer = beerService.updateBeer(beerId,beerDto);
@@ -60,4 +66,12 @@ public class BeerController {
 		beerService.deleteBeer(beerId);
 	}
 	
+	   @ExceptionHandler(MethodArgumentNotValidException.class)
+	    public ResponseEntity<List<String>> validationErrorHandler(MethodArgumentNotValidException e){
+		   List<String> errors = new ArrayList<String>(e.getBindingResult().getErrorCount());
+		  
+		    e.getBindingResult().getFieldErrors().forEach(e2 -> errors.add(e2.getField()+" "+e2.getDefaultMessage()+":: supplied value "+e2.getRejectedValue().toString())); 
+		  
+	        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+	    }
 }
